@@ -47,12 +47,21 @@ public class Lexer {
 	public String getTokenList(){
 		StringBuilder sb = new StringBuilder("Token List:");
 		for(Token token:token_list) {
-			sb.append("(");
+			sb.append("<");
 			sb.append(token.toString());
-			sb.append("), ");
+			sb.append(">, ");
 		}
 		sb.append("\n");
 		return sb.toString();
+	}
+	
+	
+	// clear
+	
+	public void clear() {
+		line_cnt = 0;
+		symbol_table.clear();
+		token_list.clear();
 	}
 	
 	
@@ -269,4 +278,6 @@ public class Lexer {
 		
 		return "OK";
 	}
+	
+	
 }

@@ -26,6 +26,7 @@ import java.awt.Toolkit;
 
 import lexer.*;
 import utils.*;
+import javax.swing.JScrollPane;
 
 public class MainFrame extends JFrame {
 
@@ -78,7 +79,7 @@ public class MainFrame extends JFrame {
 		display.setLineWrap(true);
 		display.setForeground(new Color(244, 164, 96));
 		display.setBounds(0, 27, 781, 337);
-		panel.add(display);
+		
 		
 		Label label = new Label("|Code Editor");
 		label.setBackground(UIManager.getColor("Button.background"));
@@ -86,6 +87,11 @@ public class MainFrame extends JFrame {
 		label.setFont(new Font("Arial", Font.BOLD, 14));
 		label.setBounds(0, 0, 781, 25);
 		panel.add(label);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(0, 27, 781, 337);
+		panel.add(scrollPane_1);
+		scrollPane_1.setViewportView(display);
 		
 		JPanel panel_2 = new JPanel();
 		panel_2.setBackground(Color.WHITE);
@@ -97,7 +103,7 @@ public class MainFrame extends JFrame {
 		lx.setForeground(UIManager.getColor("CheckBox.foreground"));
 		lx.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 18));
 		lx.setBounds(0, 23, 781, 178);
-		panel_2.add(lx);
+		
 		
 		Label label_2 = new Label("|Lexical Analysis");
 		label_2.setForeground(Color.DARK_GRAY);
@@ -105,6 +111,11 @@ public class MainFrame extends JFrame {
 		label_2.setBackground(SystemColor.menu);
 		label_2.setBounds(0, 0, 781, 25);
 		panel_2.add(label_2);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(0, 23, 781, 178);
+		panel_2.add(scrollPane);
+		scrollPane.setViewportView(lx);
 		
 		JToolBar toolBar = new JToolBar();
 		toolBar.setBackground(Color.WHITE);
@@ -153,6 +164,7 @@ public class MainFrame extends JFrame {
 		btnCompile.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 24));
 		btnCompile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				lexer.clear();
 				String input = display.getText();
 				String[] lines = input.split("\n");
 				String status = "";

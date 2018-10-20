@@ -94,7 +94,12 @@ public class Token{
 	// toString 
 	@Override
 	public String toString() {
-		return token_name + ":" + attr_value;
+		if(attr_value == 0) {
+			return token_name;
+		}
+		else {
+			return token_name + ":" + attr_value;
+		}
 	}
 }
 

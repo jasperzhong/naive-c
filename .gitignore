@@ -3,6 +3,8 @@ bin/
 .settings/
 
 *.tex
-
+*.aux
+*.log
+*.gz
 
 *.jar

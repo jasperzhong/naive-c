@@ -1,5 +1,7 @@
 package utils;
 
+import java.io.File;
+
 public class PreProcessor {
 	
     public PreProcessor() {  	
@@ -7,7 +9,7 @@ public class PreProcessor {
     }
     
     // Check whether the input file is like "xxx.cl".
-    public boolean CheckExt(String fileName) {
+    public static boolean CheckExt(String fileName) {
 		String ext_name;
 		int dot_pos = fileName.lastIndexOf('.');
 		boolean flag = true;
@@ -25,7 +27,7 @@ public class PreProcessor {
     }
     
     // When called, it reads the next line and remove comments.
-    public String preprocess(String input) {  
+    public static String preprocess(String input) {  
     	StringBuilder str = new StringBuilder();
     	String []lines = input.split("\n");
     	
@@ -42,5 +44,24 @@ public class PreProcessor {
 		}
 		return str.toString();
     }
+    	
+    public static void sourceCodeList(File file, int i) {
+    	for(int j = 0;j < i * 5; ++j) {
+    		System.out.print(" ");
+    	}
+    	
+        if(file.isDirectory()) {
+        	System.out.println(file.getName());
+            File[] files = file.listFiles();
+            for(File f : files) {
+            	sourceCodeList(f,i + 1);
+            }
+        }else {
+        	if(CheckExt(file.getName())) {
+        		System.out.println(file.getName());
+        	}
+        }
+    }
+    
     
 }
