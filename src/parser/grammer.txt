@@ -1,6 +1,0 @@
-Program -> type ID () block
-type -> int
-type -> void
-block -> { decl stmt }
-decl -> var_decl ; decl
-var_decl -> int ID
