@@ -1,6 +1,9 @@
 package parser;
 
 import java.util.TreeSet;
+
+import org.omg.CosNaming.NamingContextExtPackage.StringNameHelper;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -9,8 +12,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class LL1 {
-	// Predict Table
-	public HashMap<String, String> predict_map;
+	// Predict Table 
+	public HashMap<String, GrammarRule> predict_map;
 	public ArrayList<GrammarRule> grammar_list;
 	public TreeSet<String> terminals;
 	public TreeSet<String> non_terminals;
@@ -19,10 +22,12 @@ public class LL1 {
 	public HashMap<String, ArrayList<String>> follow_set;
 	
 	public LL1() {
-		predict_map = new HashMap<String, String>();
+		predict_map = new HashMap<String, GrammarRule>();
 		grammar_list = new ArrayList<GrammarRule>();
 		terminals = new TreeSet<String>();
 		non_terminals = new TreeSet<String>();
+		first_set = new HashMap<String, ArrayList<String>>();
+		follow_set = new HashMap<String, ArrayList<String>>();
 	}
 	
 	
@@ -48,7 +53,7 @@ public class LL1 {
 			right = line.split("->")[1].trim();
 			rights = right.split(" ");
 			for(String r : rights) {
-				if(non_terminals.contains(r) || r.equals("$")) {
+				if(non_terminals.contains(r)) {
 					continue;
 				}
 				else {
@@ -58,8 +63,23 @@ public class LL1 {
 		}
 	}
 	
+	// judge whether X has 'X -> $' 
+	private boolean hasNull(String left) {
+		String[] rights;
+		for(GrammarRule grammarRule : grammar_list) {
+			if(grammarRule.getLeft().equals(left)) {
+				rights = grammarRule.getRight();
+				if(rights[0].equals("$")) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
 	
-	private void getFirst() {
+	// build FIRST SET
+	private void buildFirst() {
 		ArrayList<String> first;
 		
 		// terminals' first set
@@ -69,15 +89,179 @@ public class LL1 {
 			first_set.put(terminal, first);
 		}
 		
+		for(String non_terminal : non_terminals) {
+			first = new ArrayList<String>();
+			first_set.put(non_terminal, first);
+		}
 		
+		
+		String[] rights;
+		String left;
+		boolean flag = true;
+		while(true) {
+			flag = true;
+			for(GrammarRule grammarRule : grammar_list) {
+				left = grammarRule.getLeft();
+				rights = grammarRule.getRight();
+				
+				for(String right : rights) {	
+					// X -> a... or X -> $ => add a or $ into FIRST(X)
+					if(terminals.contains(right)) {
+						if(!first_set.get(left).contains(right)) {
+							first_set.get(left).add(right);
+							flag = false;
+						}
+					} // X -> Y...  => add FIRST(Y) - $ into FIRST(X) 
+					else if(non_terminals.contains(right)){
+						first = first_set.get(right);
+						for(String fi : first) {
+							if(!fi.equals("$")) {
+								if(!first_set.get(left).contains(fi)) {
+									first_set.get(left).add(fi);	
+									flag = false;
+								}
+							}
+						}
+					}
+					else {
+						System.err.println("YOU GOT SOME BUGS!");
+					}
+					
+					// if X has 'X -> $', then turn to next right symbol
+					if(hasNull(right)) {
+						continue;
+					}else {
+						break;
+					}
+				}
+			}
+			
+			if(flag) {
+				break;
+			}
+			
+		}
 		
 	}
 	
 	
-	private void getFollow() {
+	// build FOLLOW SET
+	private void buildFollow() {
+		ArrayList<String> first;
+		ArrayList<String> follow;
+		// terminals' first set
+		for(String non_terminal : non_terminals) {
+			follow = new ArrayList<String>();
+			follow_set.put(non_terminal, follow);
+		}
 		
+		follow_set.get("E").add("#"); // Start Symbol, default is S
+		
+		String[] rights;
+		String left;
+		String right;
+		boolean flag = true;
+		boolean flag2 = true;
+		while(true) {
+			flag = true;
+			for(GrammarRule grammarRule : grammar_list) {
+				left = grammarRule.getLeft();
+				rights = grammarRule.getRight();
+				
+				for(int i = 0;i < rights.length; ++i) {
+					right = rights[i];
+					// B -> ...A... 
+					if(non_terminals.contains(right)) {
+						flag2 = true;
+						for(int j = i + 1; j < rights.length; ++j) {
+							first = first_set.get(rights[j]);
+							for(String fi : first) {
+								if(!follow_set.get(right).contains(fi) && !fi.equals("$")) {
+									follow_set.get(right).add(fi);
+									flag = false;
+								}
+							}
+							
+							if(hasNull(rights[j])) {
+								continue;
+							}else {
+								flag2 = false;
+								break;
+							}
+						} // end of rights from j = i + 1 to end
+						
+						// B -> ...A or B -> ...Ab && b => $ 
+						if(flag2) {
+							left = grammarRule.getLeft();
+							follow = follow_set.get(left);
+							for(String fo : follow){
+								if(!follow_set.get(right).contains(fo)) {
+									follow_set.get(right).add(fo);
+									flag = false;
+								}
+							}
+						}
+						
+					} // end of if non_terminals
+				} // end of traverse rights
+			} // end of traverse grammar list
+			
+			if(flag) {
+				break;
+			}
+		}
 	}
 	
+	// build Predict Table
+	private void buildPredictMap() {
+		ArrayList<String> first;
+		ArrayList<String> rights_first;
+		ArrayList<String> follow;
+		String[] rights;
+		String left;
+		boolean flag = false;
+		for(GrammarRule grammarRule : grammar_list) {
+			left = grammarRule.getLeft();
+			rights = grammarRule.getRight();
+			
+			rights_first = new ArrayList<String>();
+			
+			flag = false;
+			for(String right : rights) {
+				first = first_set.get(right);
+				for(String fi : first) {
+					if(!rights_first.contains(fi)) {
+						if(fi.equals("$")) {
+							flag = true;
+						}else {
+							rights_first.add(fi);							
+						}
+					}
+				}
+				
+				if(hasNull(right)) {
+					continue;
+				}else {
+					break;
+				}
+			}
+			
+			for(String fi : rights_first) {
+				predict_map.put(left + "@" + fi, grammarRule);
+			}
+			
+			// has A -> $
+			if(flag) {
+				rights_first.add("$");
+				
+				follow = follow_set.get(left);
+				for(String fo : follow) {
+					predict_map.put(left + "@" + fo, grammarRule);
+				}
+			}
+
+		}
+	}
 	
 	
 	// syntactic analysis
@@ -105,9 +289,18 @@ public class LL1 {
 		
 		ll1.buildPredictMap(stringBuilder.toString());
 		
+		ll1.buildFirst();
+		ll1.buildFollow();
+		
+		ll1.buildPredictMap();
+		
 		System.out.println(ll1.grammar_list);
 		System.out.println(ll1.terminals);
 		System.out.println(ll1.non_terminals);
+		System.out.println(ll1.first_set);
+		System.out.println(ll1.follow_set);
+		System.out.println(ll1.predict_map);
+		System.out.println(ll1.predict_map.size());
 		
 	}
 	
