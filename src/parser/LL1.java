@@ -1,11 +1,9 @@
 package parser;
 
 import java.util.TreeSet;
-
-import org.omg.CosNaming.NamingContextExtPackage.StringNameHelper;
-
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Stack;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +19,8 @@ public class LL1 {
 	public HashMap<String, ArrayList<String>> first_set;
 	public HashMap<String, ArrayList<String>> follow_set;
 	
+	public Stack<String> stack;
+	
 	public LL1() {
 		predict_map = new HashMap<String, GrammarRule>();
 		grammar_list = new ArrayList<GrammarRule>();
@@ -28,6 +28,8 @@ public class LL1 {
 		non_terminals = new TreeSet<String>();
 		first_set = new HashMap<String, ArrayList<String>>();
 		follow_set = new HashMap<String, ArrayList<String>>();
+		
+		stack = new Stack<String>();
 	}
 	
 	
@@ -138,10 +140,8 @@ public class LL1 {
 			
 			if(flag) {
 				break;
-			}
-			
+			}	
 		}
-		
 	}
 	
 	
@@ -265,8 +265,54 @@ public class LL1 {
 	
 	
 	// syntactic analysis
-	public String syntacticAnalysis(String input) {
-		return "";
+	public void syntacticAnalysis(ArrayList<String> input) {
+		stack.push("#");
+		stack.push("E"); // start Symbol
+		input.add("#");
+		
+		String top, in, key;
+		int index = 0, len = input.size();
+		GrammarRule grammarRule;
+		String[] rights;
+		int cnt = 0;
+		while(!stack.empty() && index < len) {
+			top = stack.pop(); 
+			in = input.get(index);
+			
+			if(top.equals(in)) {
+				if(top.equals("#")) {
+					break;
+				}
+				index++;
+				continue;
+			}
+			
+			key = top + "@" + in;
+			
+			//System.out.println(key);
+			grammarRule = predict_map.get(key);
+			if(grammarRule != null) {
+				rights = grammarRule.getRight();
+				
+				if(rights[0].equals("$")) {
+					continue; 
+				}
+				
+				System.out.println(cnt + ": " + grammarRule);
+				
+				for(int i = rights.length - 1; i >= 0; --i) {
+					stack.push(rights[i]);
+				}
+				
+				cnt++;
+			}
+			else {
+				System.err.println("Reject!");
+				return;
+			}
+		}
+		
+		System.out.println("Accept!");
 	}
 	
 	public static void main(String[] argv) {
@@ -294,6 +340,7 @@ public class LL1 {
 		
 		ll1.buildPredictMap();
 		
+		/*
 		System.out.println(ll1.grammar_list);
 		System.out.println(ll1.terminals);
 		System.out.println(ll1.non_terminals);
@@ -301,6 +348,17 @@ public class LL1 {
 		System.out.println(ll1.follow_set);
 		System.out.println(ll1.predict_map);
 		System.out.println(ll1.predict_map.size());
+		*/
+		
+		ArrayList<String> input = new ArrayList<String>();
+		input.add("i");
+		input.add("+");
+		input.add("(");
+		input.add("i");
+		input.add("+");
+		input.add("i");
+		input.add(")");
+		ll1.syntacticAnalysis(input);
 		
 	}
 	
