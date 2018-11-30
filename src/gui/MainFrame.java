@@ -15,6 +15,8 @@ import javax.swing.ImageIcon;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Scanner;
 import java.awt.event.ActionEvent;
 import java.awt.Font;
@@ -24,7 +26,7 @@ import javax.swing.UIManager;
 import java.awt.SystemColor;
 import java.awt.Toolkit;
 
-import lexer.*;
+import parser.*;
 import utils.*;
 import javax.swing.JScrollPane;
 
@@ -32,7 +34,7 @@ public class MainFrame extends JFrame {
 
 	private JPanel contentPane;
 	
-	private Lexer lexer = new Lexer(); 
+	
 	private PreProcessor preProcessor = new PreProcessor();
 
 	/**
@@ -59,16 +61,16 @@ public class MainFrame extends JFrame {
 		
 		
 		setTitle("\u949F\u94B0\u741B 1652817 \u7F16\u8BD1\u539F\u7406");
-		setIconImage(Toolkit.getDefaultToolkit().getImage("D:\\Coding\\Java\\naive-c\\src\\gui\\tongji.png"));
+		setIconImage(Toolkit.getDefaultToolkit().getImage("src\\gui\\tongji.png"));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 804, 690);
+		setBounds(100, 100, 1104, 775);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
 		JPanel panel = new JPanel();
-		panel.setBounds(5, 76, 781, 364);
+		panel.setBounds(5, 76, 1067, 300);
 		panel.setBackground(Color.WHITE);
 		contentPane.add(panel);
 		panel.setLayout(null);
@@ -80,22 +82,21 @@ public class MainFrame extends JFrame {
 		display.setForeground(new Color(244, 164, 96));
 		display.setBounds(0, 27, 781, 337);
 		
-		
-		Label label = new Label("|Code Editor");
-		label.setBackground(UIManager.getColor("Button.background"));
-		label.setForeground(Color.DARK_GRAY);
-		label.setFont(new Font("Arial", Font.BOLD, 14));
-		label.setBounds(0, 0, 781, 25);
-		panel.add(label);
-		
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(0, 27, 781, 337);
+		scrollPane_1.setBounds(0, 27, 1068, 275);
 		panel.add(scrollPane_1);
 		scrollPane_1.setViewportView(display);
 		
+		
+		Label label = new Label("|Code Editor");
+		scrollPane_1.setRowHeaderView(label);
+		label.setBackground(UIManager.getColor("Button.background"));
+		label.setForeground(Color.DARK_GRAY);
+		label.setFont(new Font("Arial", Font.BOLD, 14));
+		
 		JPanel panel_2 = new JPanel();
 		panel_2.setBackground(Color.WHITE);
-		panel_2.setBounds(5, 442, 781, 201);
+		panel_2.setBounds(5, 376, 1067, 352);
 		contentPane.add(panel_2);
 		panel_2.setLayout(null);
 		
@@ -104,29 +105,28 @@ public class MainFrame extends JFrame {
 		lx.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 18));
 		lx.setBounds(0, 23, 781, 178);
 		
-		
-		Label label_2 = new Label("|Lexical Analysis");
-		label_2.setForeground(Color.DARK_GRAY);
-		label_2.setFont(new Font("Arial", Font.BOLD, 14));
-		label_2.setBackground(SystemColor.menu);
-		label_2.setBounds(0, 0, 781, 25);
-		panel_2.add(label_2);
-		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(0, 23, 781, 178);
+		scrollPane.setBounds(0, 0, 1067, 352);
 		panel_2.add(scrollPane);
 		scrollPane.setViewportView(lx);
 		
+		
+		Label label_2 = new Label("Syntactic Analysis");
+		scrollPane.setColumnHeaderView(label_2);
+		label_2.setForeground(Color.DARK_GRAY);
+		label_2.setFont(new Font("Arial", Font.BOLD, 14));
+		label_2.setBackground(SystemColor.menu);
+		
 		JToolBar toolBar = new JToolBar();
 		toolBar.setBackground(Color.WHITE);
-		toolBar.setBounds(5, 0, 781, 74);
+		toolBar.setBounds(5, 0, 1067, 74);
 		contentPane.add(toolBar);
 		
 		JButton btnNewButton = new JButton("Open");
 		btnNewButton.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 24));
 		toolBar.add(btnNewButton);
 		btnNewButton.setBackground(Color.WHITE);
-		btnNewButton.setIcon(new ImageIcon("D:\\Coding\\Java\\naive-c\\src\\gui\\open.jpg"));
+		btnNewButton.setIcon(new ImageIcon("src\\gui\\open.jpg"));
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser jfc = new JFileChooser();
@@ -164,43 +164,48 @@ public class MainFrame extends JFrame {
 		btnCompile.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 24));
 		btnCompile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				lexer.clear();
-				String input = display.getText();
-				String[] lines = input.split("\n");
-				String status = "";
-				for(String line: lines) {
-					
-					status = lexer.lexAnalysis(line);
-					if(status.equals("OK")) {
-						continue;
-					}else {
-						lx.setText(status);
-						return;
+				LL1 ll1 = new LL1(); 
+				File file = new File("src\\parser\\grammar.txt");
+				RandomAccessFile randomAccessFile;
+				StringBuilder stringBuilder = new StringBuilder();
+				String line;
+				try {
+					randomAccessFile = new RandomAccessFile(file, "r");
+				
+					while((line = randomAccessFile.readLine()) != null) {
+						stringBuilder.append(line);
+						stringBuilder.append("\n");
 					}
+				} catch (IOException e1) {
+					e1.printStackTrace();
 				}
 				
-				lx.setText(lexer.getSymbolTable() + "\n" + lexer.getTokenList());
+				
+				ll1.buildPredictMap(stringBuilder.toString());
+				
+				ll1.buildFirst();
+				ll1.buildFollow();
+				
+				ll1.buildPredictMap();
+				
+				String code = display.getText();
+				
+				// Tokenizer give token list
+				String result = ll1.lexer.lexAnalysis(code);
+				if(!result.equals("OK")) {
+					lx.setText(result);
+					return;
+				}
+				
+				if(ll1.syntacticAnalysis(ll1.lexer.token_list)) {
+					ll1.display();
+				}
+				
+				lx.setText(ll1.result.toString());
 			}
 		});
-		
-		
-		JButton btnPreprocess = new JButton("Preprocess");
-		btnPreprocess.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 24));
-		btnPreprocess.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				// preprocess: trim and remove line comment 
-				String input = display.getText();
-				display.setText(preProcessor.preprocess(input));
-			}
-		});
-		
-		
-		btnPreprocess.setIcon(new ImageIcon("D:\\Coding\\Java\\naive-c\\src\\gui\\pinterest.jpg"));
-		btnPreprocess.setFont(new Font("Î¢ÈíÑÅºÚ", Font.PLAIN, 24));
-		btnPreprocess.setBackground(Color.WHITE);
-		toolBar.add(btnPreprocess);
 		toolBar.add(btnCompile);
-		btnCompile.setIcon(new ImageIcon("D:\\Coding\\Java\\naive-c\\src\\gui\\compile.jpg"));
+		btnCompile.setIcon(new ImageIcon("src\\gui\\compile.jpg"));
 		btnCompile.setBackground(Color.WHITE);
 	}
 }

@@ -1,6 +1,9 @@
 package parser;
 
 import java.util.TreeSet;
+
+import javax.naming.spi.DirStateFactory.Result;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
@@ -8,6 +11,8 @@ import java.util.Stack;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import lexer.*;
 
 public class LL1 {
 	// Predict Table 
@@ -23,6 +28,10 @@ public class LL1 {
 	
 	public GrammarNode root; // Grammar Tree root
 	
+	public Lexer lexer;
+	
+	public StringBuilder result;
+	
 	public LL1() {
 		predict_map = new HashMap<String, GrammarRule>();
 		grammar_list = new ArrayList<GrammarRule>();
@@ -33,7 +42,11 @@ public class LL1 {
 		
 		stack = new Stack<String>();
 		
-		root = new GrammarNode("E"); // start Symbol
+		root = new GrammarNode("Program"); // start Symbol
+		
+		lexer = new Lexer();
+		
+		result = new StringBuilder();
 	}
 	
 	
@@ -85,7 +98,7 @@ public class LL1 {
 	}
 	
 	// build FIRST SET
-	private void buildFirst() {
+	public void buildFirst() {
 		ArrayList<String> first;
 		
 		// terminals' first set
@@ -150,7 +163,7 @@ public class LL1 {
 	
 	
 	// build FOLLOW SET
-	private void buildFollow() {
+	public void buildFollow() {
 		ArrayList<String> first;
 		ArrayList<String> follow;
 		// terminals' first set
@@ -159,7 +172,7 @@ public class LL1 {
 			follow_set.put(non_terminal, follow);
 		}
 		
-		follow_set.get("E").add("#"); // Start Symbol, default is S
+		follow_set.get("Program").add("#"); // Start Symbol, default is S
 		
 		String[] rights;
 		String left;
@@ -217,7 +230,7 @@ public class LL1 {
 	}
 	
 	// build Predict Table
-	private void buildPredictMap() {
+	public void buildPredictMap() {
 		ArrayList<String> first;
 		ArrayList<String> rights_first;
 		ArrayList<String> follow;
@@ -269,15 +282,17 @@ public class LL1 {
 	
 	
 	// syntactic analysis
-	public boolean syntacticAnalysis(ArrayList<String> input) {
+	public boolean syntacticAnalysis(ArrayList<Token> input) {
 		stack.push("#");
-		stack.push("E"); // start Symbol
-		input.add("#");
+		stack.push("Program"); // start Symbol
+		input.add(new Token("#", 0));
 		
-		System.out.print("分析的字符串是：");
-		System.out.println(input);
+		result.append("分析的字符串是：");
+		result.append(input);
+		result.append("\n");
 		
-		String top, in, key;
+		String top, key;
+		Token in;
 		int index = 0, len = input.size();
 		GrammarRule grammarRule;
 		String[] rights;
@@ -287,7 +302,7 @@ public class LL1 {
 			top = stack.pop(); 
 			in = input.get(index);
 			
-			if(top.equals(in)) {
+			if(top.equals(in.getTokenName())) {
 				if(top.equals("#")) {
 					break;
 				}
@@ -295,9 +310,9 @@ public class LL1 {
 				continue;
 			}
 			
-			key = top + "@" + in;
+			key = top + "@" + in.getTokenName();
 			
-			//System.out.println(key);
+			// System.out.println(cnt + ":" + key);
 			grammarRule = predict_map.get(key);
 			if(grammarRule != null) {
 				rights = grammarRule.getRight();
@@ -306,7 +321,10 @@ public class LL1 {
 					continue; 
 				}
 				
-				System.out.println(cnt + ": " + grammarRule);
+				result.append(cnt);
+				result.append(": ");
+				result.append(grammarRule);
+				result.append("\n");
 				
 				for(int i = rights.length - 1; i >= 0; --i) {
 					stack.push(rights[i]);
@@ -319,77 +337,29 @@ public class LL1 {
 				cnt++;
 			}
 			else {
-				System.err.println("Reject!");
+				result.append("Reject!\n");
 				return false;
 			}
 		}
 		
-		System.out.println("Accept!");
+		result.append("Accept!\n");
 		return true;
 	}
 	
 	public void display() {
+		result.append("Syntactic Tree:\n");
 		dfs(root, 0);
 	}
 	
 	public void dfs(GrammarNode cur, int depth) {
 		if(cur != null) {
 			for(int i = 0;i < 5 * depth; ++i)
-				System.out.print(" ");
-			System.out.println(cur.name);
+				result.append(" ");
+			result.append(cur.name);
+			result.append("\n");
 			for(GrammarNode grammarNode : cur.children) {
 				dfs(grammarNode, depth + 1);
 			}
-		}
-	}
-	
-	
-	public static void main(String[] argv) {
-		LL1 ll1 = new LL1();
-		File file = new File("D:\\Coding\\Java\\naive-c\\src\\parser\\grammar.txt");
-		RandomAccessFile randomAccessFile;
-		StringBuilder stringBuilder = new StringBuilder();
-		String line;
-		try {
-			randomAccessFile = new RandomAccessFile(file, "r");
-		
-			while((line = randomAccessFile.readLine()) != null) {
-				stringBuilder.append(line);
-				stringBuilder.append("\n");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		
-		ll1.buildPredictMap(stringBuilder.toString());
-		
-		ll1.buildFirst();
-		ll1.buildFollow();
-		
-		ll1.buildPredictMap();
-		
-		/*
-		System.out.println(ll1.grammar_list);
-		System.out.println(ll1.terminals);
-		System.out.println(ll1.non_terminals);
-		System.out.println(ll1.first_set);
-		System.out.println(ll1.follow_set);
-		System.out.println(ll1.predict_map);
-		System.out.println(ll1.predict_map.size());
-		*/
-		
-		ArrayList<String> input = new ArrayList<String>();
-		input.add("i");
-		input.add("*");
-		input.add("i");
-		input.add("(");
-		input.add(")");
-		input.add("i");
-		input.add(")");
-		if(ll1.syntacticAnalysis(input)) {
-			System.out.println("语法分析树如下：");
-			ll1.display();
 		}
 	}
 	
