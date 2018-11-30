@@ -21,6 +21,8 @@ public class LL1 {
 	
 	public Stack<String> stack;
 	
+	public GrammarNode root; // Grammar Tree root
+	
 	public LL1() {
 		predict_map = new HashMap<String, GrammarRule>();
 		grammar_list = new ArrayList<GrammarRule>();
@@ -30,6 +32,8 @@ public class LL1 {
 		follow_set = new HashMap<String, ArrayList<String>>();
 		
 		stack = new Stack<String>();
+		
+		root = new GrammarNode("E"); // start Symbol
 	}
 	
 	
@@ -265,16 +269,20 @@ public class LL1 {
 	
 	
 	// syntactic analysis
-	public void syntacticAnalysis(ArrayList<String> input) {
+	public boolean syntacticAnalysis(ArrayList<String> input) {
 		stack.push("#");
 		stack.push("E"); // start Symbol
 		input.add("#");
+		
+		System.out.print("分析的字符串是：");
+		System.out.println(input);
 		
 		String top, in, key;
 		int index = 0, len = input.size();
 		GrammarRule grammarRule;
 		String[] rights;
 		int cnt = 0;
+		GrammarNode cur = root, tmp = null;
 		while(!stack.empty() && index < len) {
 			top = stack.pop(); 
 			in = input.get(index);
@@ -302,18 +310,39 @@ public class LL1 {
 				
 				for(int i = rights.length - 1; i >= 0; --i) {
 					stack.push(rights[i]);
+					tmp = new GrammarNode(rights[i]);
+					cur.children.add(tmp);
 				}
+				
+				cur = tmp; // the last
 				
 				cnt++;
 			}
 			else {
 				System.err.println("Reject!");
-				return;
+				return false;
 			}
 		}
 		
 		System.out.println("Accept!");
+		return true;
 	}
+	
+	public void display() {
+		dfs(root, 0);
+	}
+	
+	public void dfs(GrammarNode cur, int depth) {
+		if(cur != null) {
+			for(int i = 0;i < 5 * depth; ++i)
+				System.out.print(" ");
+			System.out.println(cur.name);
+			for(GrammarNode grammarNode : cur.children) {
+				dfs(grammarNode, depth + 1);
+			}
+		}
+	}
+	
 	
 	public static void main(String[] argv) {
 		LL1 ll1 = new LL1();
@@ -352,14 +381,16 @@ public class LL1 {
 		
 		ArrayList<String> input = new ArrayList<String>();
 		input.add("i");
-		input.add("+");
-		input.add("(");
+		input.add("*");
 		input.add("i");
-		input.add("+");
+		input.add("(");
+		input.add(")");
 		input.add("i");
 		input.add(")");
-		ll1.syntacticAnalysis(input);
-		
+		if(ll1.syntacticAnalysis(input)) {
+			System.out.println("语法分析树如下：");
+			ll1.display();
+		}
 	}
 	
 }
