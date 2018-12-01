@@ -24,7 +24,11 @@ public class Token{
 		Token.keywords.add("while");
 		Token.keywords.add("return");
 		
+		Token.keywords.add("short");
+		Token.keywords.add("long");
+		Token.keywords.add("char");
 		Token.keywords.add("float");
+		Token.keywords.add("double");
 		
 		// add delimiters
 		Token.delimiters.add(";");
